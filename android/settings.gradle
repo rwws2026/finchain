@@ -1,0 +1,29 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+
+    // Flutter toolchain을 Gradle에 포함 (필수)
+    def flutterSdkPath = {
+        def properties = new Properties()
+        file("local.properties").withInputStream { properties.load(it) }
+        def path = properties.getProperty("flutter.sdk")
+        assert path != null : "flutter.sdk not set in local.properties"
+        return path
+    }()
+
+    includeBuild("${flutterSdkPath}/packages/flutter_tools/gradle")
+}
+
+plugins {
+    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+
+    // ✅ AGP / Kotlin 버전(이전 에러 해결용)
+    id "com.android.application" version "8.2.2" apply false
+    id "com.android.library" version "8.2.2" apply false
+    id "org.jetbrains.kotlin.android" version "2.1.10" apply false
+}
+
+include ":app"

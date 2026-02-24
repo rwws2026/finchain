@@ -1,0 +1,44 @@
+# Flutter/Dart/Pub
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+build/
+coverage/
+*.lock
+
+# Android
+android/.gradle/
+android/local.properties
+**/key.properties
+**/*.jks
+**/*.keystore
+
+# iOS/macOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/ephemeral/
+Runner.xcworkspace/
+DerivedData/
+
+# Web
+web/.dart_tool/
+web/build/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase (중요: 옵션들)
+firebase-debug.log
+.firebaserc
+.firebase/

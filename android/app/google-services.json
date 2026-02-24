@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "386925733059",
+    "project_id": "rwws-5ecbb",
+    "storage_bucket": "rwws-5ecbb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386925733059:android:ade7c640b2b434e99c6e76",
+        "android_client_info": {
+          "package_name": "com.pinchain.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "386925733059-h8hgv538ro27qfmp0j7ap8emntf62dj1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLnx4uwVKRJXWIpbc9R-9tsNQlpK8YIIk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "386925733059-h8hgv538ro27qfmp0j7ap8emntf62dj1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "386925733059-io8u8aeibd57njtf89dbsk8lblt4ecc5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.pinchain"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386925733059:android:a7f2f4c0f2ba5e749c6e76",
+        "android_client_info": {
+          "package_name": "com.rwws_mentor.project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "386925733059-h8hgv538ro27qfmp0j7ap8emntf62dj1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLnx4uwVKRJXWIpbc9R-9tsNQlpK8YIIk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "386925733059-h8hgv538ro27qfmp0j7ap8emntf62dj1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "386925733059-io8u8aeibd57njtf89dbsk8lblt4ecc5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.pinchain"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
