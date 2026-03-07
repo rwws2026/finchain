@@ -12,7 +12,6 @@ import '../features/menty/onboarding/menty_onboarding_flow_page.dart';
 import '../features/menty/menty_home_page.dart';
 
 import '../features/mentor/mentor_home_page.dart';
-import '../features/mentor/mentor_pending_page.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -35,7 +34,6 @@ class _AuthGateState extends State<AuthGate> {
 
         final user = authSnap.data;
 
-        // ✅ 로그아웃 상태면 로그인 페이지 (SignupStart로 이동 콜백 연결)
         if (user == null) {
           return LoginPage(
             onGoSignup: () {
@@ -67,14 +65,9 @@ class _AuthGateState extends State<AuthGate> {
             }
 
             if (role == 'mentor') {
-              final status = (data['mentorStatus'] ?? 'pending') as String;
-              if (status != 'approved') {
-                return MentorPendingPage(status: status);
-              }
               return const MentorHomePage();
             }
 
-            // role이 비었거나 이상하면 역할 선택으로
             return const SignupStartPage();
           },
         );

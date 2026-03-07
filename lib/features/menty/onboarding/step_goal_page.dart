@@ -1,5 +1,4 @@
 //lib/features/menty/onboarding/step_goal_page.dart
-
 import 'package:flutter/material.dart';
 
 class StepGoalPage extends StatefulWidget {
@@ -27,7 +26,8 @@ class _StepGoalPageState extends State<StepGoalPage> {
   @override
   void initState() {
     super.initState();
-    _goalCtrl.text = (widget.initial['goal'] ?? '') as String;
+    _goalCtrl.text =
+        (widget.initial['savingGoal'] ?? widget.initial['goal'] ?? '') as String;
   }
 
   @override
@@ -38,7 +38,12 @@ class _StepGoalPageState extends State<StepGoalPage> {
 
   Future<void> _next() async {
     if (!_formKey.currentState!.validate()) return;
-    await widget.onNext({'goal': _goalCtrl.text.trim()});
+
+    final goal = _goalCtrl.text.trim();
+    await widget.onNext({
+      'savingGoal': goal,
+      'goal': goal,
+    });
   }
 
   @override
@@ -51,20 +56,23 @@ class _StepGoalPageState extends State<StepGoalPage> {
         key: _formKey,
         child: ListView(
           children: [
-            const Text('목표', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text(
+              '저축 목표',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
 
             TextFormField(
               controller: _goalCtrl,
               decoration: const InputDecoration(
-                labelText: '목표(goal)',
+                labelText: '저축 목표(savingGoal)',
                 hintText: '예: 1년 안에 500만원 모으기',
               ),
               maxLines: 3,
               enabled: !disabled,
               validator: (v) {
                 final t = (v ?? '').trim();
-                if (t.isEmpty) return '목표를 입력해줘';
+                if (t.isEmpty) return '저축 목표를 입력해줘';
                 return null;
               },
             ),

@@ -1,4 +1,3 @@
-//lib/features/auth/signup_form_page.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -60,7 +59,6 @@ class _SignupFormPageState extends State<SignupFormPage> {
     try {
       User user;
 
-      // 이미 Auth는 생성됐는데 users 문서만 없는 케이스(=forceUid가 들어온 경우) 대응
       if (widget.forceUid != null) {
         user = FirebaseAuth.instance.currentUser!;
       } else {
@@ -71,18 +69,6 @@ class _SignupFormPageState extends State<SignupFormPage> {
         user = cred.user!;
       }
 
-      if (!mounted) return;
-      // ✅ 회원가입 라우트 스택 닫고 AuthGate로 돌아가기
-      Navigator.of(context).popUntil((route) => route.isFirst);
-
-      // (선택) 안내 메시지
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('가입 완료! 온보딩으로 이동합니다.')),
-      );
-
-
-
-      // ✅ 멘티/멘토 공통 기본값
       final baseData = <String, dynamic>{
         'role': widget.role,
         'name': _name.text.trim(),
@@ -92,22 +78,29 @@ class _SignupFormPageState extends State<SignupFormPage> {
         'createdAt': FieldValue.serverTimestamp(),
         'lastLoginAt': FieldValue.serverTimestamp(),
       };
-     
-      
-      // ✅ 멘티: 온보딩 시작 상태를 반드시 박아준다
+
       if (widget.role == 'menty') {
         baseData.addAll({
           'onboardingDone': false,
           'onboardingStep': 0,
           'mentorStatus': 'none',
+          'mainProfit': 0,
+          'subProfit': 0,
+          'deposit': 0,
+          'saving': 0,
+          'stock': 0,
+          'fund': 0,
+          'otherPortfolio': 0,
+          'fixedSpending': 0,
+          'savingGoal': '',
+          'birthDate': '',
+          'phone': '',
         });
       }
 
-      // ✅ 멘토: 승인 대기 상태
       if (widget.role == 'mentor') {
         baseData.addAll({
-          'mentorStatus': 'pending',
-          // 멘토는 온보딩 플로우를 안 탄다고 가정(필드 없어도 됨)
+          'mentorStatus': 'approved',
         });
       }
 
@@ -116,30 +109,40 @@ class _SignupFormPageState extends State<SignupFormPage> {
         data: baseData,
       );
 
-      if (!mounted) return;
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      if (widget.role == 'mentor') {
+        await _fs.createOrUpdateMentorProfile(
+          uid: user.uid,
+          data: {
+            'name': _name.text.trim(),
+            'nickname': _nickname.text.trim(),
+            'headline': '',
+            'bio': '',
+            'specialty': '',
+            'consultingField': '',
+            'averageRating': 0.0,
+            'recommendCount': 0,
+            'consultCount': 0,
+            'score': 0.0,
+            'createdAt': DateTime.now().toIso8601String(),
+            'updatedAt': DateTime.now().toIso8601String(),
+          },
+        );
+      }
 
-      // ✅ 여기서 절대 홈/요청페이지로 Navigator 이동하지 말 것!
-      // AuthGate가 authStateChanges + users/{uid} 스트림으로 분기해서
-      // - menty & onboardingDone=false => 온보딩
-      // - mentor & pending => pending/요청 흐름
-      // 으로 알아서 보냄.
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('가입 완료! 이동 중...')),
       );
-    
-      // 선택 1) 그냥 두기: AuthGate가 알아서 화면 바꿈 (추천)
-      // 선택 2) 현재 회원가입 화면을 닫고, 이전(SignupStart)로 돌아가기
-      // Navigator.pop(context);
 
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       setState(() => _err = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final isMentor = widget.role == 'mentor';
@@ -169,7 +172,8 @@ class _SignupFormPageState extends State<SignupFormPage> {
               decoration: const InputDecoration(labelText: '닉네임'),
             ),
             const SizedBox(height: 12),
-            if (_err != null) Text(_err!, style: const TextStyle(color: Colors.red)),
+            if (_err != null)
+              Text(_err!, style: const TextStyle(color: Colors.red)),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -188,7 +192,5 @@ class _SignupFormPageState extends State<SignupFormPage> {
         ),
       ),
     );
-    
   }
-  
 }

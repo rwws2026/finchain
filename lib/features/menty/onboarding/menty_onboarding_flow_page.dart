@@ -1,5 +1,4 @@
 //lib/features/menty/onboarding/menty_onboarding_flow_page.dart
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -35,54 +34,39 @@ class _MentyOnboardingFlowPageState extends State<MentyOnboardingFlowPage> {
   }
 
   Future<void> _load() async {
-  final doc = await _svc.getUserDoc(_uid);
-  final data = doc.data() ?? {};
+    final doc = await _svc.getUserDoc(_uid);
+    final data = doc.data() ?? {};
 
-  final done = (data['onboardingDone'] == true);
-  if (done) {
-    if (mounted) {
-      setState(() => _loading = false);
-    }
-    return; // AuthGate가 홈으로 보낼 것
+    final done = (data['onboardingDone'] == true);
+    if (done && mounted) return;
+
+    final step = (data['onboardingStep'] is int) ? data['onboardingStep'] as int : 0;
+    setState(() {
+      _userData = data;
+      _step = step.clamp(0, 4);
+      _loading = false;
+    });
   }
-
-  final step = (data['onboardingStep'] is int) ? data['onboardingStep'] as int : 0;
-  if (!mounted) return;
-
-  setState(() {
-    _userData = data;
-    _step = step.clamp(0, 4);
-    _loading = false;
-  });
-}
 
   Future<void> _saveStep({
-  required int nextStep,
-  required Map<String, dynamic> patch,
-}) async {
-  setState(() => _saving = true);
-
-  try {
-    await _svc.updateUserMerge(_uid, {
-      ...patch,
-      'onboardingStep': nextStep,
-      'updatedAt': DateTime.now().toIso8601String(),
-    });
-
-    if (!mounted) return;
-    setState(() {
-      _userData = {..._userData, ...patch, 'onboardingStep': nextStep};
-      _step = nextStep.clamp(0, 4);
-    });
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('저장 실패: $e')),
-    );
-  } finally {
-    if (mounted) setState(() => _saving = false);
+    required int nextStep,
+    required Map<String, dynamic> patch,
+  }) async {
+    setState(() => _saving = true);
+    try {
+      await _svc.updateUserMerge(_uid, {
+        ...patch,
+        'onboardingStep': nextStep,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+      setState(() {
+        _userData = {..._userData, ...patch, 'onboardingStep': nextStep};
+        _step = nextStep.clamp(0, 4);
+      });
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
-}
 
   Future<void> _finish(Map<String, dynamic> patch) async {
     setState(() => _saving = true);
@@ -93,7 +77,6 @@ class _MentyOnboardingFlowPageState extends State<MentyOnboardingFlowPage> {
         'onboardingStep': 5,
         'updatedAt': DateTime.now().toIso8601String(),
       });
-      // ✅ AuthGate가 stream으로 onboardingDone을 감지하고 홈으로 보내줌
     } finally {
       if (mounted) setState(() => _saving = false);
     }
