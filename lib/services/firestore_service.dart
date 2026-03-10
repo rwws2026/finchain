@@ -22,7 +22,14 @@ class FirestoreService {
   Future<void> updateUserMerge(String uid, Map<String, dynamic> data) async {
     await userRef(uid).set(data, SetOptions(merge: true));
   }
-
+  // 상담 내용 업데이트 (답변 등록 등)
+  Future<void> updateConsultation(String consultationId, Map<String, dynamic> data) async {
+    await FirebaseFirestore.instance
+        .collection('consultations')
+        .doc(consultationId)
+        .update(data);
+  }
+  
   Future<void> createUser({
     required String uid,
     required Map<String, dynamic> data,
