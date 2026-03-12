@@ -42,8 +42,8 @@ class MentorProfilePage extends StatelessWidget {
                 user = userSnap.data!.data() ?? {};
               }
 
-              final nickname =
-                  (profile['nickname'] ?? user['nickname'] ?? '') as String;
+              final nickname = (profile['nickname'] ?? user['nickname'] ?? 'M') as String;
+              final initials = nickname.isNotEmpty ? nickname.substring(0, 1).toUpperCase() : 'M';
               final name = (user['name'] ?? profile['name'] ?? '') as String;
               final headline = (profile['headline'] ?? '') as String;
               final bio = (profile['bio'] ?? '') as String;

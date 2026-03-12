@@ -171,7 +171,7 @@ class _ConsultationRequestPageState extends State<ConsultationRequestPage> {
           final mentorSpecialty = (mentorProfileData['specialty'] ?? '') as String;
           final mentorTags = mentorSpecialty.split(',').where((e) => e.trim().isNotEmpty).toList();
           final mentorRating = ((mentorProfileData['averageRat  ing'] ?? 4.9) as num).toDouble();
-          final mentorInitials = mentorNickname.isNotEmpty ? mentorNickname.substring(0, 2).toUpperCase() : 'M';
+          final mentorInitials = mentorNickname.isNotEmpty ? mentorNickname.substring(0, 1).toUpperCase() : 'M';
 
           // 멘티(내) 정보 파싱
           final ageStr = _calculateAge(mentyData['birthDate']?.toString() ?? '');

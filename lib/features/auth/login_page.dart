@@ -1,78 +1,94 @@
-//lib/features/auth/login_page.dart
+// lib/features/auth/login_page.dart
 
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
-  final VoidCallback onGoSignup;
-  const LoginPage({super.key, required this.onGoSignup});
+  // 💡 이메일 가입 페이지로 넘어가던 onGoSignup 변수를 완전히 삭제했습니다.
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _auth = AuthService();
-  final _email = TextEditingController();
-  final _pw = TextEditingController();
-  bool _loading = false;
-  String? _err;
+  bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _email.dispose();
-    _pw.dispose();
-    super.dispose();
-  }
-
-  Future<void> _login() async {
-    setState(() {
-      _loading = true;
-      _err = null;
-    });
-    try {
-      await _auth.signInWithEmail(email: _email.text.trim(), password: _pw.text);
-    } catch (e) {
-      setState(() => _err = e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    
+    final authService = AuthService();
+    final user = await authService.signInWithGoogle();
+    
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인이 취소되었거나 실패했습니다.')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PinChain 로그인')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(controller: _email, decoration: const InputDecoration(labelText: '이메일')),
-            TextField(
-              controller: _pw,
-              decoration: const InputDecoration(labelText: '비밀번호'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 12),
-            if (_err != null) Text(_err!, style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _login,
-                child: _loading
-                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('로그인'),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              
+              const Icon(Icons.account_balance_wallet, size: 80, color: Color(0xFF00B4DB)),
+              const SizedBox(height: 24),
+              const Text(
+                '나만의 재무 멘토를\n만나보세요',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, height: 1.3),
+                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: widget.onGoSignup,
-              child: const Text('회원가입 (멘티/멘토 선택)'),
-            ),
-            const SizedBox(height: 8),
-            const Text('멘토이신가요? 가입 후 심사(서류 제출)가 필요합니다.'),
-          ],
+              const SizedBox(height: 12),
+              const Text(
+                '더 나은 자산 관리를 위한 첫 걸음',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              
+              const Spacer(),
+
+              // 구글 로그인 버튼만 단독으로 남김
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                      onPressed: _handleGoogleSignIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black87,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 1,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.g_mobiledata, size: 32, color: Colors.redAccent),
+                          SizedBox(width: 8),
+                          Text(
+                            'Google로 시작하기',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+              
+              // 이메일 로그인 버튼 삭제 후 여백 조정
+              const SizedBox(height: 48),
+            ],
+          ),
         ),
       ),
     );

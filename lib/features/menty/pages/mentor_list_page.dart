@@ -123,7 +123,7 @@ class MentorListPage extends StatelessWidget {
     final topPercent = (rating > 4.8) ? '1%' : '5%';
     final expYears = (rating > 4.8) ? '15년 이상' : '12년 이상';
     final responseTime = (rating > 4.8) ? '2시간 이내' : '4시간 이내';
-    final initials = nickname.isNotEmpty ? nickname.substring(0, 2).toUpperCase() : 'EX';
+    final initials = nickname.isNotEmpty ? nickname.substring(0, 1).toUpperCase() : 'E';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),

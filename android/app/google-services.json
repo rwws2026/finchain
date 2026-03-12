@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "386925733059-kja668vpvcs5lm4pngj01m30pf02qbbg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pinchain.app",
+            "certificate_hash": "272953b8ee3aaaf042c7bf3f8039fbc01b616183"
+          }
+        },
+        {
           "client_id": "386925733059-h8hgv538ro27qfmp0j7ap8emntf62dj1.apps.googleusercontent.com",
           "client_type": 3
         }

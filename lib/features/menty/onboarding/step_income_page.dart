@@ -1,19 +1,14 @@
 //lib/features/menty/onboarding/step_income_page.dart
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 class StepIncomePage extends StatefulWidget {
-  const StepIncomePage({
-    super.key,
-    required this.initial,
-    required this.saving,
-    required this.onBack,
-    required this.onNext,
-  });
+  final Map<String, dynamic> data;
+  final VoidCallback onNext;
 
-  final Map<String, dynamic> initial;
-  final bool saving;
-  final VoidCallback onBack;
-  final Future<void> Function(Map<String, dynamic> patch) onNext;
+  const StepIncomePage({super.key, required this.data, required this.onNext});
 
   @override
   State<StepIncomePage> createState() => _StepIncomePageState();
@@ -21,161 +16,188 @@ class StepIncomePage extends StatefulWidget {
 
 class _StepIncomePageState extends State<StepIncomePage> {
   final _formKey = GlobalKey<FormState>();
+  final _currencyFormat = NumberFormat('#,###');
 
-  final _mainCtrl = TextEditingController();
-  final _subCtrl = TextEditingController();
-
-  final _depositCtrl = TextEditingController();
-  final _savingCtrl = TextEditingController();
-  final _stockCtrl = TextEditingController();
-  final _fundCtrl = TextEditingController();
-  final _otherCtrl = TextEditingController();
+  // 포트폴리오 선택 옵션
+  final List<String> _portfolioOptions = [
+    '예금/적금/연금', 'CMA/MMF', '채권/펀드/ETF', '주식/가상화폐', '기타'
+  ];
 
   @override
   void initState() {
     super.initState();
-    final d = widget.initial;
-    _mainCtrl.text = (d['mainProfit']?.toString() ?? '');
-    _subCtrl.text = (d['subProfit']?.toString() ?? '');
-    _depositCtrl.text = (d['deposit']?.toString() ?? '');
-    _savingCtrl.text = (d['saving']?.toString() ?? '');
-    _stockCtrl.text = (d['stock']?.toString() ?? '');
-    _fundCtrl.text = (d['fund']?.toString() ?? '');
-    _otherCtrl.text = (d['otherPortfolio']?.toString() ?? '');
+    // 데이터 초기화 (리스트 구조)
+    widget.data['portfolio'] ??= <Map<String, dynamic>>[];
   }
 
-  @override
-  void dispose() {
-    _mainCtrl.dispose();
-    _subCtrl.dispose();
-    _depositCtrl.dispose();
-    _savingCtrl.dispose();
-    _stockCtrl.dispose();
-    _fundCtrl.dispose();
-    _otherCtrl.dispose();
-    super.dispose();
+  // 항목 추가 함수
+  void _addPortfolioItem(String category) {
+    setState(() {
+      (widget.data['portfolio'] as List).add({
+        'category': category,
+        'amount': '',
+        'yield': category == '주식/가상화폐' ? '' : null, // 주식일 때만 수익률 필드 생성
+      });
+    });
   }
 
-  int _parseMoney(String text) {
-    return int.tryParse(text.replaceAll(',', '').trim()) ?? 0;
-  }
-
-  Future<void> _next() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    await widget.onNext({
-      'mainProfit': _parseMoney(_mainCtrl.text),
-      'subProfit': _parseMoney(_subCtrl.text),
-      'deposit': _parseMoney(_depositCtrl.text),
-      'saving': _parseMoney(_savingCtrl.text),
-      'stock': _parseMoney(_stockCtrl.text),
-      'fund': _parseMoney(_fundCtrl.text),
-      'otherPortfolio': _parseMoney(_otherCtrl.text),
+  // 항목 삭제 함수
+  void _removeItem(int index) {
+    setState(() {
+      (widget.data['portfolio'] as List).removeAt(index);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final disabled = widget.saving;
+    List portfolio = widget.data['portfolio'];
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
       child: Form(
         key: _formKey,
-        child: ListView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '수익 및 포트폴리오',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              '수익 및 자산 구성',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 32),
+
+            // 1. 주수익 & 부수익
+            _buildLabel('월 주수익 (원)'),
+            _buildCurrencyField(
+              hint: '예: 3,000,000',
+              onChanged: (v) => widget.data['mainIncome'] = v,
+            ),
+            const SizedBox(height: 16),
+            _buildLabel('월 부수익 (원)'),
+            _buildCurrencyField(
+              hint: '예: 500,000',
+              onChanged: (v) => widget.data['subIncome'] = v,
+            ),
+            
+            const SizedBox(height: 32),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            // 2. 재테크 포트폴리오 (동적 추가)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildLabel('재테크 포트폴리오'),
+                DropdownButton<String>(
+                  hint: const Text('항목 추가'),
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.add_circle, color: Color(0xFF00B4DB)),
+                  items: _portfolioOptions.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    if (v != null) _addPortfolioItem(v);
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 12),
 
-            TextFormField(
-              controller: _mainCtrl,
-              decoration: const InputDecoration(labelText: '주 수익(mainProfit) (원)'),
-              keyboardType: TextInputType.number,
-              enabled: !disabled,
-              validator: (v) {
-                final t = (v ?? '').trim();
-                if (t.isEmpty) return '주 수익을 입력해줘';
-                return null;
+            // 추가된 포트폴리오 리스트
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: portfolio.length,
+              itemBuilder: (context, index) {
+                final item = portfolio[index];
+                return _buildPortfolioCard(index, item);
               },
             ),
-            const SizedBox(height: 10),
 
-            TextFormField(
-              controller: _subCtrl,
-              decoration: const InputDecoration(labelText: '부 수익(subProfit) (원)'),
-              keyboardType: TextInputType.number,
-              enabled: !disabled,
+            const SizedBox(height: 40),
+
+            // 다음 버튼
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) widget.onNext();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00B4DB),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('다음', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
             ),
-            const SizedBox(height: 18),
+          ],
+        ),
+      ),
+    );
+  }
 
-            const Text(
-              '현재 재테크 포트폴리오',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  // 금액 입력용 필드 (콤마 포맷터 적용)
+  Widget _buildCurrencyField({required String hint, required Function(String) onChanged, String? initialValue}) {
+    return TextFormField(
+      initialValue: initialValue,
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        _CurrencyInputFormatter(),
+      ],
+      decoration: InputDecoration(
+        hintText: hint,
+        border: const OutlineInputBorder(),
+        suffixText: '원',
+      ),
+      onChanged: onChanged,
+    );
+  }
+
+  // 포트폴리오 개별 카드
+  Widget _buildPortfolioCard(int index, Map<String, dynamic> item) {
+    bool isStock = item['category'] == '주식/가상화폐';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(item['category'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                IconButton(
+                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                  onPressed: () => _removeItem(index),
+                )
+              ],
             ),
-            const SizedBox(height: 10),
-
-            TextFormField(
-              controller: _depositCtrl,
-              decoration: const InputDecoration(labelText: '예금(deposit) (원)'),
-              keyboardType: TextInputType.number,
-              enabled: !disabled,
-            ),
-            const SizedBox(height: 10),
-
-            TextFormField(
-              controller: _savingCtrl,
-              decoration: const InputDecoration(labelText: '적금(saving) (원)'),
-              keyboardType: TextInputType.number,
-              enabled: !disabled,
-            ),
-            const SizedBox(height: 10),
-
-            TextFormField(
-              controller: _stockCtrl,
-              decoration: const InputDecoration(labelText: '주식(stock) (원)'),
-              keyboardType: TextInputType.number,
-              enabled: !disabled,
-            ),
-            const SizedBox(height: 10),
-
-            TextFormField(
-              controller: _fundCtrl,
-              decoration: const InputDecoration(labelText: '펀드(fund) (원)'),
-              keyboardType: TextInputType.number,
-              enabled: !disabled,
-            ),
-            const SizedBox(height: 10),
-
-            TextFormField(
-              controller: _otherCtrl,
-              decoration: const InputDecoration(labelText: '기타 포트폴리오(otherPortfolio) (원)'),
-              keyboardType: TextInputType.number,
-              enabled: !disabled,
-            ),
-
-            const SizedBox(height: 18),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: disabled ? null : widget.onBack,
-                      child: const Text('이전'),
+                if (isStock) ...[
+                  Expanded(
+                    flex: 1,
+                    child: TextFormField(
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(hintText: '수익률', suffixText: '%', border: OutlineInputBorder()),
+                      onChanged: (v) => item['yield'] = v,
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: disabled ? null : _next,
-                      child: const Text('다음'),
-                    ),
+                  flex: 2,
+                  child: _buildCurrencyField(
+                    hint: isStock ? '투자금액' : '금액 입력',
+                    onChanged: (v) => item['amount'] = v,
                   ),
                 ),
               ],
@@ -183,6 +205,24 @@ class _StepIncomePageState extends State<StepIncomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLabel(String label) {
+    return Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600));
+  }
+}
+
+// 🔥 3자리 콤마 포맷터 클래스
+class _CurrencyInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) return newValue;
+    final int value = int.parse(newValue.text.replaceAll(',', ''));
+    final String formatted = NumberFormat('#,###').format(value);
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

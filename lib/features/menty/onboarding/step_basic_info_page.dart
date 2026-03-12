@@ -1,20 +1,13 @@
 //lib/features/menty/onboarding/step_basic_info_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../../services/firestore_service.dart';
 
 class StepBasicInfoPage extends StatefulWidget {
-  const StepBasicInfoPage({
-    super.key,
-    required this.initial,
-    required this.saving,
-    required this.onNext,
-  });
+  final Map<String, dynamic> data;
+  final VoidCallback onNext;
 
-  final Map<String, dynamic> initial;
-  final bool saving;
-  final Future<void> Function(Map<String, dynamic> patch) onNext;
+  const StepBasicInfoPage({super.key, required this.data, required this.onNext});
 
   @override
   State<StepBasicInfoPage> createState() => _StepBasicInfoPageState();
@@ -23,194 +16,102 @@ class StepBasicInfoPage extends StatefulWidget {
 class _StepBasicInfoPageState extends State<StepBasicInfoPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final _nicknameCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
-  final _birthDateCtrl = TextEditingController();
-  final _jobCtrl = TextEditingController();
-  final _addressCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
-
-  bool _checking = false;
-  final _svc = FirestoreService.instance;
-
-  @override
-  void initState() {
-    super.initState();
-    final d = widget.initial;
-
-    _nicknameCtrl.text = (d['nickname'] ?? '') as String;
-    _nameCtrl.text = (d['name'] ?? '') as String;
-    _birthDateCtrl.text = (d['birthDate'] ?? '') as String;
-    _jobCtrl.text = (d['job'] ?? '') as String;
-    _addressCtrl.text = (d['address'] ?? '') as String;
-    _phoneCtrl.text = (d['phone'] ?? '') as String;
-  }
-
-  @override
-  void dispose() {
-    _nicknameCtrl.dispose();
-    _nameCtrl.dispose();
-    _birthDateCtrl.dispose();
-    _jobCtrl.dispose();
-    _addressCtrl.dispose();
-    _phoneCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickBirthDate() async {
-    DateTime initialDate = DateTime(2000, 1, 1);
-
-    if (_birthDateCtrl.text.trim().isNotEmpty) {
-      final parsed = DateTime.tryParse(_birthDateCtrl.text.trim());
-      if (parsed != null) initialDate = parsed;
-    }
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(1900, 1, 1),
-      lastDate: DateTime.now(),
-    );
-
-    if (picked == null) return;
-
-    final yyyy = picked.year.toString().padLeft(4, '0');
-    final mm = picked.month.toString().padLeft(2, '0');
-    final dd = picked.day.toString().padLeft(2, '0');
-
-    setState(() {
-      _birthDateCtrl.text = '$yyyy-$mm-$dd';
-    });
-  }
-
-  Future<void> _next() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _checking = true);
-    try {
-      final myUid = FirebaseAuth.instance.currentUser!.uid;
-      final nickname = _nicknameCtrl.text.trim();
-
-      final nickTaken = await _svc.isNicknameTaken(
-        nickname: nickname,
-        myUid: myUid,
-      );
-
-      if (nickTaken) {
-        _toast('이미 사용 중인 닉네임이야.');
-        return;
-      }
-
-     await widget.onNext({
-        'nickname': nickname,
-        'name': _nameCtrl.text.trim(),
-        'birthDate': _birthDateCtrl.text.trim(),
-        'job': _jobCtrl.text.trim(),
-        'address': _addressCtrl.text.trim(),
-        'phone': _phoneCtrl.text.trim(),
-      });
-    } finally {
-      if (mounted) setState(() => _checking = false);
-    }
-  }
-
-  void _toast(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
+  // 직업 리스트 10개
+  final List<String> _jobList = [
+    'IT/소프트웨어', '경영/관리', '금융/보험', '영업/마케팅', 
+    '서비스/외식', '의료/보건', '교육/연구', '제조/생산', 
+    '디자인/예술', '학생/취준생'
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final disabled = widget.saving || _checking;
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
       child: Form(
         key: _formKey,
-        child: ListView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '기본정보',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              '기본 정보를 입력해주세요',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 32),
 
+            // 1. 닉네임 (2글자 이상, 특수문자 금지)
+            _buildLabel('닉네임'),
             TextFormField(
-              controller: _nicknameCtrl,
-              decoration: const InputDecoration(labelText: '닉네임'),
-              enabled: !disabled,
-              validator: (v) {
-                final t = (v ?? '').trim();
-                if (t.isEmpty) return '닉네임을 입력해줘';
-                if (t.length < 2) return '닉네임이 너무 짧아';
-                return null;
-              },
-            ),
-            const SizedBox(height: 10),
-
-            TextFormField(
-              controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: '이름'),
-              enabled: false,
-              readOnly: true,
-            ),
-            const SizedBox(height: 10),
-
-            TextFormField(
-              controller: _birthDateCtrl,
-              readOnly: true,
-              enabled: !disabled,
+              initialValue: widget.data['nickname'],
               decoration: const InputDecoration(
-                labelText: '생년월일',
-                hintText: 'YYYY-MM-DD',
+                hintText: '닉네임을 입력해주세요 (2자 이상)',
+                border: OutlineInputBorder(),
               ),
-              onTap: disabled ? null : _pickBirthDate,
+              
+              onChanged: (v) => widget.data['nickname'] = v,
               validator: (v) {
-                final t = (v ?? '').trim();
-                if (t.isEmpty) return '생년월일을 입력해줘';
+                if (v == null || v.length < 2) return '2글자 이상 입력해주세요.';
+                // 특수문자 체크를 여기서 수행
+                final regExp = RegExp(r'^[a-zA-Z0-9가-힣]+$');
+                if (!regExp.hasMatch(v)) return '특수문자는 사용할 수 없습니다.';
                 return null;
               },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 24),
 
-            TextFormField(
-              controller: _jobCtrl,
-              decoration: const InputDecoration(labelText: '직업'),
-              enabled: !disabled,
-            ),
-            const SizedBox(height: 10),
-
-            TextFormField(
-              controller: _addressCtrl,
-              decoration: const InputDecoration(labelText: '주소'),
-              enabled: !disabled,
-            ),
-            const SizedBox(height: 10),
-
-            TextFormField(
-              controller: _phoneCtrl,
-              decoration: const InputDecoration(labelText: '전화번호'),
-              keyboardType: TextInputType.phone,
-              enabled: !disabled,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                _PhoneNumberFormatter(),
+            // 2. 생년월일 (박스 구분)
+            _buildLabel('생년월일'),
+            Row(
+              children: [
+                _buildBoxedField(4, '년', (v) => widget.data['birthYear'] = v),
+                const SizedBox(width: 8),
+                _buildBoxedField(2, '월', (v) => widget.data['birthMonth'] = v),
+                const SizedBox(width: 8),
+                _buildBoxedField(2, '일', (v) => widget.data['birthDay'] = v),
               ],
-              validator: (v) {
-                final t = (v ?? '').trim();
-                if (t.isEmpty) return '전화번호를 입력해줘';
-                if (!RegExp(r'^\d{2,3}-\d{3,4}-\d{4}$').hasMatch(t)) {
-                  return '전화번호 형식이 올바르지 않아';
-                }
-                return null;
-              },
             ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 18),
+            // 3. 직업 (드롭다운)
+            _buildLabel('직업'),
+            DropdownButtonFormField<String>(
+              value: widget.data['job'],
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+              hint: const Text('직업을 선택해주세요'),
+              items: _jobList.map((job) {
+                return DropdownMenuItem(value: job, child: Text(job));
+              }).toList(),
+              onChanged: (v) => setState(() => widget.data['job'] = v),
+              validator: (v) => v == null ? '직업을 선택해주세요' : null,
+            ),
+            const SizedBox(height: 24),
+
+            // 4. 전화번호 (박스 구분 3/4/4)
+            _buildLabel('전화번호'),
+            Row(
+              children: [
+                _buildBoxedField(3, '010', (v) => widget.data['phone1'] = v),
+                const SizedBox(width: 8),
+                _buildBoxedField(4, '0000', (v) => widget.data['phone2'] = v),
+                const SizedBox(width: 8),
+                _buildBoxedField(4, '0000', (v) => widget.data['phone3'] = v),
+              ],
+            ),
+            const SizedBox(height: 40),
+
+            // 다음 버튼
             SizedBox(
-              height: 48,
+              width: double.infinity,
+              height: 56,
               child: ElevatedButton(
-                onPressed: disabled ? null : _next,
-                child: Text(_checking ? '중복 확인 중...' : '다음'),
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) widget.onNext();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00B4DB),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('다음', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -218,32 +119,34 @@ class _StepBasicInfoPageState extends State<StepBasicInfoPage> {
       ),
     );
   }
-}
 
-class _PhoneNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-    String formatted = '';
+  // 공통 라벨 위젯
+  Widget _buildLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+    );
+  }
 
-    if (digits.length <= 3) {
-      formatted = digits;
-    } else if (digits.length <= 7) {
-      formatted = '${digits.substring(0, 3)}-${digits.substring(3)}';
-    } else if (digits.length <= 11) {
-      formatted =
-          '${digits.substring(0, 3)}-${digits.substring(3, digits.length - 4)}-${digits.substring(digits.length - 4)}';
-    } else {
-      formatted =
-          '${digits.substring(0, 3)}-${digits.substring(3, 7)}-${digits.substring(7, 11)}';
-    }
-
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
+  // 박스 형태의 입력창 위젯 (생년월일, 전화번호용)
+  Widget _buildBoxedField(int maxLength, String hint, Function(String) onChanged) {
+    return Expanded(
+      child: TextFormField(
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(maxLength),
+        ],
+        decoration: InputDecoration(
+          hintText: hint,
+          counterText: '',
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+        ),
+        onChanged: onChanged,
+        validator: (v) => (v == null || v.isEmpty) ? '' : null,
+      ),
     );
   }
 }

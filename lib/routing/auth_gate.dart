@@ -1,74 +1,63 @@
-//lib/routing/auth_gate.dart
+// lib/routing/auth_gate.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../services/firestore_service.dart';
+// ✅ 새로 만든 역할 선택 페이지 import (경로 확인 필요!)
+import '../features/onboarding/role_selection_page.dart';
 
 import '../features/auth/login_page.dart';
-import '../features/auth/signup_start_page.dart';
-
 import '../features/menty/onboarding/menty_onboarding_flow_page.dart';
 import '../features/menty/menty_home_page.dart';
-
 import '../features/mentor/mentor_home_page.dart';
 
-class AuthGate extends StatefulWidget {
+class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
-
-  @override
-  State<AuthGate> createState() => _AuthGateState();
-}
-
-class _AuthGateState extends State<AuthGate> {
-  final _fs = FirestoreService();
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, authSnap) {
-        if (authSnap.connectionState == ConnectionState.waiting) {
-          return const _Splash();
-        }
+      builder: (context, snapshot) {
+        // 1. 로그인 안 된 상태면 로그인 페이지로
+        if (!snapshot.hasData) return const LoginPage();
 
-        final user = authSnap.data;
-
-        if (user == null) {
-          return LoginPage(
-            onGoSignup: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SignupStartPage()),
-              );
-            },
-          );
-        }
-
-        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: _fs.userStream(user.uid),
+        // 2. 로그인된 유저라면 Firestore의 유저 정보 확인
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('users')
+              .doc(snapshot.data!.uid)
+              .get(),
           builder: (context, userSnap) {
             if (userSnap.connectionState == ConnectionState.waiting) {
-              return const _Splash();
-            }
-            if (!userSnap.hasData || !userSnap.data!.exists) {
-              return const _Splash(message: '프로필 생성 중...');
+              return const _Splash(message: '사용자 정보를 확인 중입니다...');
             }
 
-            final data = userSnap.data!.data() ?? {};
-            final role = (data['role'] ?? '') as String;
+            final userData = userSnap.data?.data() as Map<String, dynamic>?;
+            final role = userData?['role'] ?? 'none';
+            final bool onboardingDone = userData?['onboardingDone'] ?? false;
 
+            // 💡 [분기 1] 역할이 정해지지 않은 경우 (최초 가입자)
+            if (role == 'none') {
+              return const RoleSelectionPage();
+            }
+
+            // 💡 [분기 2] 멘티(Menty)인 경우
             if (role == 'menty') {
-              final done = (data['onboardingDone'] == true);
-              if (!done) return const MentyOnboardingFlowPage();
-              return const MentyHomePage();
+              // 온보딩을 안 끝냈다면 온보딩으로, 끝냈다면 멘티 홈으로
+              return onboardingDone 
+                  ? const MentyHomePage() 
+                  : const MentyOnboardingFlowPage();
             }
 
+            // 💡 [분기 3] 멘토(Mentor)인 경우
             if (role == 'mentor') {
-              return const MentorHomePage();
+              // 멘토 전용 온보딩이 있다면 여기에 비슷하게 추가
+              return const MentorHomePage(); 
             }
 
-            return const SignupStartPage();
+            // 예외 상황 발생 시 (기본값)
+            return const LoginPage();
           },
         );
       },
@@ -76,6 +65,7 @@ class _AuthGateState extends State<AuthGate> {
   }
 }
 
+// 로딩 화면 (기존에 작성하신 클래스 활용)
 class _Splash extends StatelessWidget {
   const _Splash({this.message, super.key});
   final String? message;
