@@ -1,5 +1,7 @@
-plugins{
-    id 'com.google.gms.google-services' version '4.4.4' apply false
+plugins {
+    // 이 줄을 추가하세요! 버전은 에러 로그에서 요구한 2.1.0 이상인 2.1.10을 추천합니다.
+    id "org.jetbrains.kotlin.android" version "2.1.10" apply false
+    id "com.google.gms.google-services" version "4.4.2" apply false
 }
 
 allprojects {
@@ -13,9 +15,6 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-/*subprojects {
-    project.evaluationDependsOn(":app")
-}*/
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir

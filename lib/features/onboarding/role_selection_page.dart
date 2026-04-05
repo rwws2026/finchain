@@ -20,25 +20,25 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // 1. Firestore의 해당 유저 문서 업데이트
+        // ✅ update 대신 set (merge: true)를 사용하면 문서가 없어도 생성하며 업데이트합니다.
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
-            .update({
+            .set({
           'role': role,
-        });
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
 
-        // 2. 성공 시 다음 온보딩 단계로 이동 (기존 코드가 있다면 그곳으로)
-        if (mounted) {
-          // TODO: 정보 입력 페이지(2단계)로 이동하는 로직을 여기에 넣으세요.
-          // Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoInputPage()));
-          print('선택된 역할: $role');
-        }
+        // 💡 여기서 Navigator로 페이지를 넘길 필요가 없습니다! 
+        // AuthGate가 Stream을 통해 role이 바뀐 것을 감지하고 자동으로 화면을 바꿔줍니다.
+        print('역할 업데이트 성공: $role');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('역할 저장 중 오류가 발생했습니다: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('역할 저장 중 오류가 발생했습니다: $e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

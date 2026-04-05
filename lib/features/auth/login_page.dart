@@ -2,9 +2,10 @@
 
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+// ✅ 온보딩 페이지로 바로 이동하기 위해 import 추가
+import '../menty/onboarding/menty_onboarding_flow_page.dart';
 
 class LoginPage extends StatefulWidget {
-  // 💡 이메일 가입 페이지로 넘어가던 onGoSignup 변수를 완전히 삭제했습니다.
   const LoginPage({super.key});
 
   @override
@@ -16,7 +17,6 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
-    
     final authService = AuthService();
     final user = await authService.signInWithGoogle();
     
@@ -41,7 +41,6 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              
               const Icon(Icons.account_balance_wallet, size: 80, color: Color(0xFF00B4DB)),
               const SizedBox(height: 24),
               const Text(
@@ -55,10 +54,8 @@ class _LoginPageState extends State<LoginPage> {
                 style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
-              
               const Spacer(),
 
-              // 구글 로그인 버튼만 단독으로 남김
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
@@ -67,9 +64,7 @@ class _LoginPageState extends State<LoginPage> {
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black87,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 1,
                       ),
                       child: const Row(
@@ -77,16 +72,28 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           Icon(Icons.g_mobiledata, size: 32, color: Colors.redAccent),
                           SizedBox(width: 8),
-                          Text(
-                            'Google로 시작하기',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
+                          Text('Google로 시작하기', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
               
-              // 이메일 로그인 버튼 삭제 후 여백 조정
-              const SizedBox(height: 48),
+              const SizedBox(height: 16),
+
+              // 🔥 관리자용 테스트 버튼 (개발 단계에서만 사용)
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MentyOnboardingFlowPage()),
+                  );
+                },
+                child: const Text(
+                  '관리자 모드로 온보딩 테스트',
+                  style: TextStyle(color: Colors.grey, decoration: TextDecoration.underline),
+                ),
+              ),
+
+              const SizedBox(height: 32),
             ],
           ),
         ),
